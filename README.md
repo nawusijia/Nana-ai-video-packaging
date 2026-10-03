@@ -38,6 +38,11 @@ python3 tools/render.py tools/scenes/案例二_原理图_骂之后.html out.mp4
 cd tools/pack && python3 build.py && python3 assemble.py 成片.mp4
 ```
 
+## 许可
+混合许可，详见 [LICENSE](LICENSE)：
+- **代码**（脚本、动画源码、流程 skill、提示词模板、踩坑清单、过程日志）：MIT，随便用、随便改、可商用，保留署名即可。
+- **品牌素材**（片尾“娜乌斯嘉 · 恭喜发现宝藏”成品、品牌规范、说话习惯、名称与形象）：仅供学习参考，请勿直接用于你的内容或冒充娜乌斯嘉AI。想要同款片尾，用代码换成你自己的名字和配色就好。
+
 ## 三条方法
 1. 别接受第一版。
 2. 告诉 AI 你是谁。
