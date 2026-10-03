@@ -1,0 +1,84 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:#070b16}
+  canvas{position:absolute;inset:0}
+  .layer{position:absolute;inset:0;font-family:"Noto Sans CJK SC",sans-serif;color:#eef2ff}
+  .card{position:absolute;left:50%;top:50%;width:1180px;height:540px;margin:-270px 0 0 -590px;
+    border-radius:36px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.18);
+    backdrop-filter:blur(28px);box-shadow:0 40px 120px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.25)}
+  .tag{position:absolute;left:96px;top:78px;font-size:26px;letter-spacing:.32em;color:#9fb4ff;font-weight:500}
+  .tag i{display:inline-block;width:12px;height:12px;border-radius:50%;background:#7cf0d0;margin-right:18px;vertical-align:middle;box-shadow:0 0 18px #7cf0d0}
+  .title{position:absolute;left:96px;top:138px;font-size:80px;font-weight:700;line-height:1.22;letter-spacing:.02em;white-space:nowrap}
+  .title span{display:inline-block}
+  .sub{position:absolute;left:98px;bottom:62px;font-size:30px;color:#b9c3e6;letter-spacing:.08em}
+  .rule{position:absolute;left:96px;bottom:132px;height:3px;background:linear-gradient(90deg,#7cf0d0,#8a7dff);border-radius:3px}
+  .brand{position:absolute;right:96px;bottom:62px;font-size:28px;font-weight:700;letter-spacing:.12em}
+  .brand b{color:#7cf0d0}
+  .caret{display:inline-block;width:5px;height:78px;background:#7cf0d0;margin-left:10px;vertical-align:-8px}
+</style></head>
+<body>
+<canvas id="bg" width="1920" height="1080"></canvas>
+<div class="layer">
+  <div class="card" id="card">
+    <div class="tag" id="tag"><i></i>AI 实测 · EP.01</div>
+    <div class="title" id="title"></div>
+    <div class="rule" id="rule"></div>
+    <div class="sub" id="sub">从需求到成片，难点和解法全公开</div>
+    <div class="brand" id="brand">娜乌斯嘉<b>AI</b></div>
+  </div>
+</div>
+<script>
+window.SCENE={w:1920,h:1080,fps:30,duration:6};
+const L1="我让 AI 给我的账号", L2="做了一整套包装";
+const cv=document.getElementById('bg'),c=cv.getContext('2d');
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const ease=x=>1-Math.pow(1-clamp(x),3);
+const easeIO=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const blobs=[[.25,.35,560,'124,240,208'],[.75,.30,620,'138,125,255'],[.55,.80,700,'70,120,255'],[.10,.85,420,'124,240,208']];
+function bg(t){
+  c.fillStyle='#070b16';c.fillRect(0,0,1920,1080);
+  c.globalCompositeOperation='lighter';
+  blobs.forEach(([x,y,r,col],i)=>{
+    const px=x*1920+Math.sin(t*.6+i*1.7)*90, py=y*1080+Math.cos(t*.5+i)*60;
+    const g=c.createRadialGradient(px,py,0,px,py,r);
+    const a=.30*ease(t/1.2);
+    g.addColorStop(0,`rgba(${col},${a})`);g.addColorStop(1,`rgba(${col},0)`);
+    c.fillStyle=g;c.fillRect(0,0,1920,1080);
+  });
+  c.globalCompositeOperation='source-over';
+  // fine grid
+  c.strokeStyle=`rgba(160,180,255,${.06*ease(t/1.5)})`;c.lineWidth=1;
+  for(let x=0;x<=1920;x+=80){c.beginPath();c.moveTo(x+.5,0);c.lineTo(x+.5,1080);c.stroke()}
+  for(let y=0;y<=1080;y+=80){c.beginPath();c.moveTo(0,y+.5);c.lineTo(1920,y+.5);c.stroke()}
+  // drifting particles (deterministic)
+  for(let i=0;i<70;i++){
+    const s=Math.sin(i*12.9898)*43758.5453, r=s-Math.floor(s);
+    const x=(r*1920+t*(12+i%7*4))%1920, y=((i*137.5)%1080 - t*(8+i%5*3)+1080)%1080;
+    c.fillStyle=`rgba(200,220,255,${(.15+.35*((i*7)%10)/10)*ease(t/1.5)})`;
+    c.beginPath();c.arc(x,y,1+(i%3)*.8,0,7);c.fill();
+  }
+}
+function typed(str,t0,cps,t){const n=Math.floor(clamp((t-t0)*cps,0,str.length));return str.slice(0,n)}
+window.seek=function(t){
+  bg(t);
+  const card=document.getElementById('card');
+  const k=easeIO((t-.4)/.9);
+  card.style.opacity=k; card.style.transform=`translateY(${(1-k)*60}px) scale(${.96+.04*k})`;
+  const tag=document.getElementById('tag');tag.style.opacity=ease((t-1.0)/.4);
+  tag.style.transform=`translateX(${(1-ease((t-1.0)/.4))*-20}px)`;
+  const a=typed(L1,1.25,14,t), b=typed(L2,1.25+L1.length/14+.15,14,t);
+  const done=t>1.25+L1.length/14+.15+L2.length/14;
+  const blink=(Math.floor(t*2.2)%2===0)||!done;
+  const caret=`<span class="caret" style="opacity:${blink&&t>1.2?1:0}"></span>`;
+  document.getElementById('title').innerHTML=a+(b.length||a.length===L1.length?'<br>'+b:'')+caret;
+  const r=document.getElementById('rule');r.style.width=(ease((t-3.3)/.7)*420)+'px';
+  const sub=document.getElementById('sub');sub.style.opacity=ease((t-3.6)/.6);
+  sub.style.transform=`translateY(${(1-ease((t-3.6)/.6))*14}px)`;
+  const br=document.getElementById('brand');br.style.opacity=ease((t-3.9)/.6);
+  // outro fade
+  document.body.style.opacity=1-ease((t-5.5)/.5);
+};
+window.seek(0);
+</script>
+</body></html>

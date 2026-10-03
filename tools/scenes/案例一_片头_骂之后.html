@@ -1,0 +1,147 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:#0b0b0d}
+  *{box-sizing:border-box}
+  #stage{position:absolute;inset:0;overflow:hidden;font-family:"Noto Sans CJK SC",sans-serif;transform-origin:50% 50%}
+  .abs{position:absolute}
+  .w{position:absolute;white-space:nowrap;font-weight:900;line-height:1;letter-spacing:-.02em}
+  .mask{position:absolute;overflow:hidden}
+  .mono{font-family:"DejaVu Sans Mono",monospace;font-weight:700;letter-spacing:.12em}
+  .outline{color:transparent;-webkit-text-stroke:4px #0b0b0d}
+</style></head>
+<body>
+<div id="stage"></div>
+<script>
+window.SCENE={w:1920,h:1080,fps:60,duration:6};
+const INK='#0b0b0d', PAPER='#efeee8', ACC='#ff4d1c', ACC2='#2b5bff';
+const S=document.getElementById('stage');
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const lerp=(a,b,k)=>a+(b-a)*k;
+const eOut=x=>1-Math.pow(1-clamp(x),4);
+const eIn=x=>Math.pow(clamp(x),3);
+const eIO=x=>{x=clamp(x);return x<.5?8*x**4:1-Math.pow(-2*x+2,4)/2};
+const back=x=>{x=clamp(x);const c=1.9;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)};
+const prog=(t,a,d)=>clamp((t-a)/d);
+function el(html,css){const d=document.createElement('div');d.innerHTML=html;d.className='abs';Object.assign(d.style,css||{});S.appendChild(d);return d}
+
+/* ---------- elements ---------- */
+const bg=el('',{inset:'0',background:PAPER});
+const wipe=el('',{left:'0',top:'0',width:'1920px',height:'1080px',background:INK});
+const dot=el('',{width:'40px',height:'40px',borderRadius:'50%',background:ACC});
+// big words: each in a mask so it can rise from below
+function word(txt,size,color,extra){
+  const m=document.createElement('div');m.className='mask';S.appendChild(m);
+  const w=document.createElement('div');w.className='w';w.textContent=txt;
+  Object.assign(w.style,{fontSize:size+'px',color,position:'relative'},extra||{});m.appendChild(w);
+  return {m,w};
+}
+const W1=word('我让',300,INK);
+const W2=word('AI',560,ACC,{fontFamily:'"Noto Sans CJK SC",sans-serif',letterSpacing:'-.04em'});
+const W3=word('给我的账号',230,INK);
+const W4=word('做了',230,INK);
+const W5=word('一整套',230,ACC2);
+const W6=word('包装',520,INK);
+const W6o=word('包装',520,'transparent',{WebkitTextStroke:'5px '+ACC});
+// bars that slide on the beat
+const bars=[0,1,2,3,4].map(i=>el('',{height:'26px',background:i%2?ACC:INK}));
+// HUD details
+const tc=el('',{left:'56px',top:'44px',fontSize:'22px',color:INK});tc.className+=' mono';
+const tr=el('娜乌斯嘉AI — 实测 EP.01',{right:'56px',top:'44px',fontSize:'22px',color:INK});tr.className+=' mono';
+const ticks=el('',{left:'56px',bottom:'52px',width:'1808px',height:'14px'});
+for(let i=0;i<=96;i++){const k=document.createElement('div');Object.assign(k.style,{position:'absolute',left:(i*1808/96)+'px',bottom:'0',width:'2px',height:(i%8?6:14)+'px',background:INK});ticks.appendChild(k)}
+const head=el('',{bottom:'44px',width:'4px',height:'30px',background:ACC});
+// lockup
+const LK=el(`<div style="font-size:150px;font-weight:900;letter-spacing:-.02em;line-height:1">娜乌斯嘉<span style="color:${ACC}">AI</span></div>`,{left:'140px',top:'380px',color:PAPER});
+const LKmask=el('',{left:'140px',top:'372px',height:'170px',background:ACC});
+const LKsub=el('我让 AI 给我的账号做了一整套包装',{left:'146px',top:'578px',fontSize:'52px',fontWeight:'700',color:PAPER});
+const LKtag=el('EP.01 · 难点和解法全公开',{left:'146px',top:'668px',fontSize:'26px',color:'#a9a8a2'});LKtag.className+=' mono';
+const circ=el('',{width:'560px',height:'560px',borderRadius:'50%',border:'3px solid '+ACC,right:'150px',top:'260px'});
+const circ2=el('',{width:'560px',height:'560px',borderRadius:'50%',background:ACC,right:'150px',top:'260px'});
+
+function place(o,x,y,ty,op,rot,sk){
+  o.m.style.left=x+'px';o.m.style.top=y+'px';o.m.style.opacity=op;
+  o.m.style.width=(o.w.offsetWidth+40)+'px';o.m.style.height=(o.w.offsetHeight*1.08)+'px';
+  o.w.style.transform=`translateY(${ty}%) rotate(${rot||0}deg) skewX(${sk||0}deg)`;
+}
+function rise(o,t,t0,x,y,out){ // in on t0, out at `out`
+  const a=back(prog(t,t0,.32)); const b=out!=null?eIn(prog(t,out,.22)):0;
+  const ty=(1-a)*110 - b*110; const vis=t>=t0-0.001&&(out==null||t<out+.23);
+  const sk=(1-eOut(prog(t,t0,.25)))*-12;
+  place(o,x,y,ty,vis?1:0,0,sk);
+}
+
+window.seek=function(t){
+  const beat=.5;
+  /* camera: slow push + punch on beats */
+  const punch=[1,1.5,2,2.5,2.75,3.5].reduce((s,b)=>s+ (t>=b? Math.exp(-(t-b)*14)*.035:0),0);
+  const cam=1+ t*.012 + punch;
+  const shake=t>3.5&&t<3.9? Math.sin(t*90)*8*Math.exp(-(t-3.5)*9):0;
+  S.style.transform=`translate(${shake}px,${shake*.6}px) scale(${cam})`;
+
+  /* 0 - 0.5 intro: dark, orange dot drops and bounces, then stretches to a line that wipes open */
+  const dIn=prog(t,0,.38);
+  const dy=lerp(-80,520,eIn(dIn));
+  const squash=t>.38&&t<.5? 1+Math.sin(prog(t,.38,.12)*Math.PI)*.6:1;
+  const lineK=eIO(prog(t,.42,.2));
+  const dw=lerp(40,1920,lineK), dh=lerp(40/ squash,26,lineK);
+  dot.style.width=dw+'px';dot.style.height=dh+'px';dot.style.left=(960-dw/2)+'px';
+  dot.style.top=(dy+20-dh/2)+'px';dot.style.borderRadius=lineK>.05?'0':'50%';
+  dot.style.opacity=t<.75?1:0;
+  // ink wipe splits up/down from the line
+  const open=eIO(prog(t,.55,.3));
+  wipe.style.clipPath=`polygon(0 0,100% 0,100% ${lerp(50,0,open)}%,0 ${lerp(50,0,open)}%, 0 ${lerp(50,100,open)}%,100% ${lerp(50,100,open)}%,100% 100%,0 100%)`;
+  wipe.style.display=t<.86?'block':'none';
+
+  /* words on the beat */
+  rise(W1,t,1.0,150,400,1.95);
+  rise(W2,t,1.5,760,250,1.95);
+  rise(W3,t,2.0,150,560,3.4);
+  rise(W4,t,2.5,150,180,3.4);
+  rise(W5,t,2.75,700,180,3.4);
+  // 包装: huge, outline echo slides behind
+  const k6=back(prog(t,3.5,.35)), o6=eIn(prog(t,4.45,.2));
+  const vis6=t>=3.5&&t<4.66;
+  place(W6,440,250,(1-k6)*110-o6*110,vis6?1:0,0,0);
+  W6o.m.style.zIndex=0;W6.m.style.zIndex=1;
+  place(W6o,440+lerp(-260,40,eOut(prog(t,3.55,.6))),250+lerp(0,30,eOut(prog(t,3.55,.6))),(1-k6)*110-o6*110,vis6?1:0,0,0);
+
+  /* beat bars sweeping across */
+  bars.forEach((b,i)=>{
+    const t0=1.0+i*.5, k=eIO(prog(t,t0-.06,.5));
+    const y=[960,70,985,945,60][i];
+    b.style.top=y+'px';b.style.width=lerp(0,1920,1-Math.abs(1-2*k))+'px';
+    b.style.left=(k<.5?0:lerp(0,1920,(k-.5)*2))+'px';
+    b.style.display=t>t0-.06&&t<t0+.5&&t<4.5?'block':'none';
+  });
+
+  /* HUD */
+  const fr=Math.floor(t*30);
+  tc.textContent=`00:00:${String(Math.floor(t)).padStart(2,'0')}:${String(fr%30).padStart(2,'0')}  ●REC`;
+  const hudOn=t>.85&&t<4.55;
+  [tc,tr,ticks,head].forEach(e=>e.style.opacity=hudOn?1:0);
+  head.style.left=(56+1808*clamp(t/6))+'px';
+
+  /* 4.5 - 6 lockup on ink: circle grows from 包装 into full ink field */
+  const c1=eIO(prog(t,4.45,.45));
+  const R=lerp(0,2600,c1);
+  circ2.style.width=circ2.style.height=R+'px';circ2.style.right='auto';circ2.style.top='auto';
+  circ2.style.left=(960-R/2)+'px';circ2.style.top=(540-R/2)+'px';circ2.style.background=INK;
+  circ2.style.display=t>4.45?'block':'none';circ2.style.zIndex=5;[circ,LKmask,LK,LKsub,LKtag].forEach((e,i)=>e.style.zIndex=6+i);
+  const lk=t>4.75;
+  LK.style.display=LKsub.style.display=LKtag.style.display=LKmask.style.display=circ.style.display=lk?'block':'none';
+  const m1=prog(t,4.75,.5);
+  // orange block reveals then retracts revealing the name
+  const mw=1060*eIO(clamp(m1*2)), mr=1060*eIO(clamp(m1*2-1));
+  LKmask.style.left=(140+mr)+'px';LKmask.style.width=Math.max(0,mw-mr)+'px';
+  LK.style.clipPath=`inset(0 ${100-clamp(m1*2-1)*100}% 0 0)`;
+  LKsub.style.opacity=eOut(prog(t,5.15,.35));LKsub.style.transform=`translateY(${(1-eOut(prog(t,5.15,.35)))*30}px)`;
+  LKtag.style.opacity=eOut(prog(t,5.3,.35));
+  const cs=back(prog(t,4.95,.5));
+  circ.style.transform=`scale(${cs}) rotate(${t*20}deg)`;circ.style.borderStyle='dashed';circ.style.opacity=.9;
+  // end: quick fade to black last 0.15s
+  S.style.opacity=1-prog(t,5.85,.15);
+};
+window.seek(0);
+</script>
+</body></html>

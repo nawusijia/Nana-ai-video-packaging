@@ -1,0 +1,144 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:#fff4ea;font-family:"Noto Sans CJK SC",sans-serif}
+#stage{position:absolute;inset:0;transform-origin:50% 55%}
+.a{position:absolute}
+.lbl{position:absolute;padding:12px 26px 14px 16px;border-radius:999px;background:#fff;border:5px solid #3b2340;
+  font-size:38px;font-weight:900;color:#3b2340;white-space:nowrap;box-shadow:6px 7px 0 #3b2340;display:flex;align-items:center;gap:14px}
+.lbl b{display:inline-flex;width:48px;height:48px;border-radius:50%;align-items:center;justify-content:center;color:#fff;font-size:28px}
+.bub{position:absolute;padding:10px 24px;border-radius:26px;background:#3b2340;color:#fff;font-size:40px;font-weight:900;white-space:nowrap}
+svg{overflow:visible}
+</style></head><body>
+<div id="stage">
+<svg class="a" width="1920" height="1080" style="left:0;top:0">
+  <defs><pattern id="dots" width="64" height="64" patternUnits="userSpaceOnUse"><circle cx="8" cy="8" r="4" fill="#ffd9c7"/></pattern></defs>
+  <rect width="1920" height="1080" fill="url(#dots)" id="dotsr"/>
+  <path id="road" d="M 150 640 C 260 520, 380 520, 470 640 S 690 760, 790 640 S 1010 520, 1110 640 S 1330 760, 1430 640 S 1650 520, 1770 640"
+        fill="none" stroke="#3b2340" stroke-width="7" stroke-linecap="round" stroke-dasharray="2 22"/>
+</svg>
+<!-- title sticker -->
+<div class="a" id="title" style="left:960px;top:150px">
+  <div style="transform:translate(-50%,-50%) rotate(-3deg);padding:22px 56px 28px;background:#ff6fa8;border:6px solid #3b2340;border-radius:40px;box-shadow:10px 12px 0 #3b2340;white-space:nowrap;font-size:84px;font-weight:900;color:#fff;letter-spacing:.02em">
+    AI 做视频的<span style="color:#ffe24d">小秘密</span></div>
+</div>
+<div class="a" id="sp1" style="left:1500px;top:90px;font-size:70px;color:#ffc531">✦</div>
+<div class="a" id="sp2" style="left:390px;top:200px;font-size:50px;color:#5fd3b3">✦</div>
+<div class="a" id="sp3" style="left:1600px;top:250px;font-size:40px;color:#b9a7ff">✦</div>
+</div>
+<script>
+window.SCENE={w:1920,h:1080,fps:60,duration:8};
+const INK='#3b2340', PINK='#ff6fa8', YEL='#ffd84d', MINT='#5fd3b3', LIL='#b9a7ff', PEACH='#ffb38a';
+const S=document.getElementById('stage');
+const C=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)), P=(t,a,d)=>C((t-a)/d);
+const back=x=>{x=C(x);const c=2.2;return 1+(c+1)*(x-1)**3+c*(x-1)**2};
+const eOut=x=>1-(1-C(x))**3, eIO=x=>{x=C(x);return x<.5?4*x*x*x:1-(-2*x+2)**3/2};
+const wob=(t,t0,a=10)=>t<t0?0:Math.sin((t-t0)*22)*a*Math.exp(-(t-t0)*5);
+function add(html,x,y){const d=document.createElement('div');d.className='a';d.style.left=x+'px';d.style.top=y+'px';d.innerHTML=html;S.appendChild(d);return d}
+const ST=[{x:310,c:PINK,n:'网页画动画'},{x:790,c:YEL,n:'逐帧截图'},{x:1270,c:MINT,n:'代码写音乐'},{x:1750,c:LIL,n:'合成出片'}];
+const SY=640;
+/* station icons (SVG, centered at 0,0) */
+const icons=[
+`<svg width="1" height="1"><g stroke="${INK}" stroke-width="6" stroke-linejoin="round">
+  <rect x="-120" y="-95" width="240" height="180" rx="22" fill="#fff"/>
+  <path d="M-120 -55 H120" fill="none"/><circle cx="-92" cy="-75" r="7" fill="${PINK}"/><circle cx="-68" cy="-75" r="7" fill="${YEL}"/><circle cx="-44" cy="-75" r="7" fill="${MINT}"/>
+  <path id="heart" d="M0 50 C -70 0, -55 -45, -20 -35 C -5 -31, 0 -20, 0 -15 C 0 -20, 5 -31, 20 -35 C 55 -45, 70 0, 0 50 Z" fill="${PINK}"/>
+</g></svg>`,
+`<svg width="1" height="1"><g stroke="${INK}" stroke-width="6" stroke-linejoin="round">
+  <rect x="-115" y="-70" width="230" height="160" rx="26" fill="${YEL}"/><rect x="-60" y="-95" width="70" height="34" rx="10" fill="${YEL}"/>
+  <circle cx="0" cy="10" r="52" fill="#fff"/><circle cx="0" cy="10" r="28" fill="${INK}"/><circle cx="-10" cy="0" r="9" fill="#fff" stroke="none"/>
+  <circle cx="80" cy="-40" r="10" fill="${PINK}"/>
+</g><g id="flash"><circle cx="0" cy="10" r="10" fill="#fff"/></g></svg>`,
+`<svg width="1" height="1"><g stroke="${INK}" stroke-width="6" stroke-linejoin="round" stroke-linecap="round">
+  <rect x="-120" y="-90" width="240" height="180" rx="30" fill="${MINT}"/>
+  <path d="M-55 -35 L-90 0 L-55 35 M55 -35 L90 0 L55 35 M18 -45 L-18 45" fill="none" stroke="#fff" stroke-width="12"/>
+</g></svg>`,
+`<svg width="1" height="1"><g stroke="${INK}" stroke-width="6" stroke-linejoin="round">
+  <rect x="-125" y="-90" width="250" height="180" rx="34" fill="${LIL}"/>
+  <path d="M-30 -45 L50 0 L-30 45 Z" fill="#fff"/>
+</g></svg>`];
+const st=ST.map((s,i)=>{
+  const ic=add(`<div style="transform:translate(-50%,-50%)">${icons[i]}</div>`,s.x,SY-210);
+  const lb=add(`<div class="lbl" style="transform:translate(-50%,0)"><b style="background:${s.c}">${i+1}</b>${s.n}</div>`,s.x,SY+70);
+  return {ic,lb};
+});
+// film frames popping from camera
+const frames=[0,1,2,3].map(i=>add(`<div style="width:74px;height:56px;border:5px solid ${INK};border-radius:10px;background:${[PINK,MINT,PEACH,LIL][i]};transform:translate(-50%,-50%)"></div>`,790,SY-210));
+// notes from code
+const notes=[0,1,2,3,4].map(i=>add(`<div style="font-size:64px;font-weight:900;color:${[PINK,YEL,LIL,PEACH,PINK][i]};-webkit-text-stroke:3px ${INK};transform:translate(-50%,-50%)">${['♪','♫','♪','♬','♫'][i]}</div>`,1270,SY-210));
+// confetti
+const conf=[...Array(26)].map((_,i)=>add(`<div style="width:${14+i%3*6}px;height:${10+i%2*10}px;border-radius:${i%2?'50%':'4px'};background:${[PINK,YEL,MINT,LIL,PEACH][i%5]};border:3px solid ${INK};transform:translate(-50%,-50%)"></div>`,1750,SY-210));
+const bubs=[add(`<div class="bub" style="transform:translate(-50%,-50%);background:${INK}">咔嚓！</div>`,790,SY-370),
+            add(`<div class="bub" style="transform:translate(-50%,-50%);background:${PINK}">出片啦！</div>`,1750,SY-380)];
+// mascot
+const M=add(`<div id="mw" style="transform-origin:50% 100%"><svg width="1" height="1"><g transform="translate(0,-70)">
+  <path d="M0 -78 L0 -110" stroke="${INK}" stroke-width="6"/><path d="M0 -132 l8 14 15 2 -11 10 3 15 -15 -7 -15 7 3 -15 -11 -10 15 -2z" fill="${YEL}" stroke="${INK}" stroke-width="5" stroke-linejoin="round" id="star"/>
+  <ellipse cx="0" cy="0" rx="82" ry="76" fill="${PINK}" stroke="${INK}" stroke-width="7"/>
+  <ellipse cx="-30" cy="-36" rx="20" ry="12" fill="#fff" opacity=".7" stroke="none"/>
+  <g id="eyes"><ellipse cx="-26" cy="-4" rx="11" ry="15" fill="${INK}"/><ellipse cx="26" cy="-4" rx="11" ry="15" fill="${INK}"/>
+  <circle cx="-22" cy="-9" r="4" fill="#fff"/><circle cx="30" cy="-9" r="4" fill="#fff"/></g>
+  <ellipse cx="-52" cy="20" rx="14" ry="8" fill="#ff3d86" opacity=".55"/><ellipse cx="52" cy="20" rx="14" ry="8" fill="#ff3d86" opacity=".55"/>
+  <path d="M-12 22 Q0 34 12 22" fill="none" stroke="${INK}" stroke-width="6" stroke-linecap="round"/>
+</g></svg></div>`,0,0);
+const mw=M.querySelector('#mw'), eyes=M.querySelector('#eyes');
+const cap=add(`<div style="transform:translate(-50%,-50%);padding:18px 44px;background:${INK};color:#fff;border-radius:999px;font-size:46px;font-weight:900;white-space:nowrap">全程只写代码 · <span style="color:${YEL}">不用视频模型</span></div>`,960,960);
+const road=document.getElementById('road'); const RL=road.getTotalLength();
+const pop=(e,t,t0,inner)=>{const k=back(P(t,t0,.45));e.style.transform=`scale(${k}) rotate(${wob(t,t0,9)}deg)`;e.style.opacity=t>=t0?1:0;};
+
+window.seek=function(t){
+  // camera: gentle sway + slow push
+  S.style.transform=`scale(${1+.025*eIO(P(t,0,8))}) rotate(${Math.sin(t*.8)*.4}deg)`;
+  document.getElementById('dotsr').setAttribute('transform',`translate(${(t*18)%64},${(t*10)%64})`);
+  // title
+  const T=document.getElementById('title');pop(T,t,.1);
+  ['sp1','sp2','sp3'].forEach((id,i)=>{const e=document.getElementById(id);const k=back(P(t,.35+i*.12,.4));
+    e.style.transform=`scale(${k*(1+.15*Math.sin(t*6+i))}) rotate(${t*90*(i%2?-1:1)}deg)`;e.style.opacity=k>0?1:0});
+  // road draws (dotted line reveals via clip)
+  road.style.clipPath=`inset(0 ${100-eIO(P(t,.6,1.2))*100}% 0 0)`;
+  // stations pop in on beats
+  st.forEach((s,i)=>{const t0=.8+i*.25;s.ic.style.transform=`scale(${back(P(t,t0,.45))}) rotate(${wob(t,t0,8)+Math.sin(t*2+i)*1.5}deg)`;s.ic.style.opacity=t>=t0?1:0;
+    const t1=t0+.15;s.lb.style.transform=`translateY(${(1-back(P(t,t1,.45)))*40}px) rotate(${wob(t,t1,5)}deg)`;s.lb.style.opacity=t>=t1?1:0;
+    // station "activates" when mascot lands: jelly bounce
+    const land=[1.9,2.9,3.9,4.9][i];
+    if(t>land){const j=Math.sin((t-land)*26)*.12*Math.exp(-(t-land)*5);s.ic.style.transform+=` scale(${1+j},${1-j})`}
+  });
+  // heart draws itself (station1), via scale pulse after land
+  const heart=document.getElementById('heart');const hk=back(P(t,1.9,.4));
+  heart.setAttribute('transform',`scale(${t<1.9?0.001:hk*(1+.06*Math.sin((t-1.9)*9))})`);
+  // camera flash
+  const fl=document.getElementById('flash');const fk=P(t,2.9,.35);
+  fl.firstElementChild.setAttribute('r',t>2.9&&t<3.25?20+fk*260:0);fl.style.opacity=1-fk;
+  frames.forEach((f,i)=>{const t0=3.0+i*.08,k=eOut(P(t,t0,.5));const ang=(-60+i*40)*Math.PI/180;
+    f.style.left=(790+Math.cos(ang)*170*k)+'px';f.style.top=(SY-210+Math.sin(ang)*130*k-60*k)+'px';
+    f.style.opacity=t>t0?1-P(t,4.6,.4):0;f.firstElementChild.style.transform=`translate(-50%,-50%) rotate(${(i-1.5)*14*k}deg) scale(${back(P(t,t0,.4))})`});
+  bubs[0].style.opacity=t>2.95&&t<4.3?1:0;bubs[0].firstElementChild.style.transform=`translate(-50%,-50%) scale(${back(P(t,2.95,.35))}) rotate(${-6+wob(t,2.95,6)}deg)`;
+  // notes burst + float
+  notes.forEach((n,i)=>{const t0=3.95+i*.07,k=P(t,t0,1.6);const x=1270+(i-2)*80*eOut(k*2)+Math.sin(t*5+i)*12;
+    const y=SY-250-130*eOut(k)+Math.sin(t*7+i*2)*10;n.style.left=x+'px';n.style.top=y+'px';
+    n.style.opacity=t>t0?1-P(t,5.5,.5):0;n.firstElementChild.style.transform=`translate(-50%,-50%) scale(${back(P(t,t0,.35))}) rotate(${Math.sin(t*6+i)*15}deg)`});
+  // confetti
+  conf.forEach((c,i)=>{const t0=4.95,tt=t-t0;if(tt<0){c.style.opacity=0;return}
+    const a=(i/26)*Math.PI*2+i,v=380+(i*53)%260;const x=1750+Math.cos(a)*v*tt*.9, y=SY-210+Math.sin(a)*v*tt*.9-200*tt+420*tt*tt;
+    c.style.left=x+'px';c.style.top=y+'px';c.style.opacity=1-P(t,6.4,.6);c.firstElementChild.style.transform=`translate(-50%,-50%) rotate(${tt*400+i*30}deg)`});
+  bubs[1].style.opacity=t>5.0?1:0;bubs[1].firstElementChild.style.transform=`translate(-50%,-50%) scale(${back(P(t,5.0,.4))}) rotate(${5+wob(t,5,7)}deg)`;
+  // mascot: drop in, then hop station to station on beats, lands at 1.9,2.9,3.9,4.9, then cheer
+  let mx,my,sx=1,sy=1,rot=0;const base=SY-20;
+  if(t<1.9){const k=eOut(P(t,1.3,.6));mx=ST[0].x-150;my=lerpY(-200,base,P(t,1.3,.6)**2);if(t<1.3)my=-300;sx=.9;sy=1.12}
+  else{let seg=Math.min(3,Math.floor((t-1.9)));let lt=(t-1.9)-seg;
+    if(t>=4.9){seg=3;lt=1}
+    const from=seg,to=Math.min(3,seg+1),hopK=C((lt-.5)/.5);
+    if(t<4.9&&lt>=.5){mx=lerp(ST[from].x-150,ST[to].x-150,eIO(hopK));my=base-Math.sin(Math.PI*hopK)*230;sy=1+.15*Math.sin(Math.PI*hopK);sx=1/sy;rot=(hopK-.5)*-20}
+    else{const idx=t>=4.9?3:from;mx=ST[idx].x-150;my=base;const land=t>=4.9?4.9:1.9+seg;const j=Math.exp(-(t-land)*7)*Math.cos((t-land)*20);sy=1-.25*j;sx=1+.25*j;
+      if(t<4.9&&lt>.35){sy=1-.18*P(lt,.35,.15);sx=1+.12*P(lt,.35,.15)} // anticipation crouch
+    }
+  }
+  if(t>5.3){my=base-Math.abs(Math.sin((t-5.3)*Math.PI*2))*40;rot=Math.sin((t-5.3)*8)*6}
+  M.style.left=mx+'px';M.style.top=my+'px';mw.style.transform=`rotate(${rot}deg) scale(${sx},${sy})`;
+  const blink=(t%2.1)<.1;eyes.setAttribute('transform',blink?'translate(0,-4) scale(1,.15) translate(0,20)':'');
+  // caption
+  cap.style.opacity=t>5.6?1:0;cap.firstElementChild.style.transform=`translate(-50%,-50%) scale(${back(P(t,5.6,.45))}) rotate(${wob(t,5.6,4)}deg)`;
+  document.body.style.opacity=1-P(t,7.7,.3);
+};
+function lerp(a,b,k){return a+(b-a)*k}function lerpY(a,b,k){return a+(b-a)*C(k)}
+window.seek(0);
+</script></body></html>

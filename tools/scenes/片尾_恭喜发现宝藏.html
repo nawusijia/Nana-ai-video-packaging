@@ -1,0 +1,59 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+html,body{margin:0;width:900px;height:600px;overflow:hidden;background:transparent;font-family:"Noto Sans CJK SC",sans-serif}
+.a{position:absolute}
+#plate{left:150px;top:150px;width:620px;height:200px;transform-origin:50% 100%}
+#plate .p{position:absolute;inset:0;background:#FF6FA8;border:9px solid #3B2340;border-radius:44px;box-shadow:14px 16px 0 #3B2340;box-sizing:border-box;overflow:hidden}
+#plate .p:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(-45deg,rgba(255,255,255,.10) 0 18px,transparent 18px 36px)}
+#plate .t{position:absolute;left:0;right:0;top:22px;text-align:center;font-size:118px;font-weight:900;color:#fff;letter-spacing:.06em;
+  text-shadow:0 7px 0 #3B2340;-webkit-text-stroke:5px #3B2340;paint-order:stroke fill}
+#shine{position:absolute;top:-40px;width:80px;height:300px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);transform:rotate(20deg)}
+#ai{left:700px;top:118px;padding:6px 18px 10px;background:#5FD3B3;border:7px solid #3B2340;border-radius:22px;box-shadow:6px 7px 0 #3B2340;font-size:46px;font-weight:900;color:#3B2340;transform-origin:50% 50%}
+#rib{left:175px;top:372px;width:570px;height:96px}
+#rib .band{position:absolute;left:40px;right:40px;top:0;height:86px;background:#FFD84D;border:7px solid #3B2340;border-radius:16px;box-sizing:border-box;
+  display:flex;align-items:center;justify-content:center;font-size:52px;font-weight:900;color:#3B2340;letter-spacing:.08em;box-shadow:8px 9px 0 #3B2340;white-space:nowrap}
+#rib .end{position:absolute;top:18px;width:70px;height:68px;background:#FFC531;border:7px solid #3B2340;box-sizing:border-box}
+#rib .l{left:0;clip-path:polygon(0 0,100% 0,100% 100%,0 100%,28% 50%)}
+#rib .r{right:0;clip-path:polygon(0 0,100% 0,72% 50%,100% 100%,0 100%)}
+svg{overflow:visible}
+</style></head><body>
+<div class="a" id="rib"><div class="end l"></div><div class="end r"></div><div class="band">恭喜发现宝藏！</div></div>
+<div class="a" id="plate"><div class="p"><div id="shine"></div></div><div class="t">娜乌斯嘉</div></div>
+<div class="a" id="ai">AI</div>
+<div class="a" id="gem" style="left:118px;top:300px"><svg width="1" height="1"><g id="gg">
+  <polygon points="0,-62 52,-22 32,52 -32,52 -52,-22" fill="#B9A7FF" stroke="#3B2340" stroke-width="8" stroke-linejoin="round"/>
+  <polygon points="0,-62 22,-22 0,52 -22,-22" fill="#D9CEFF" stroke="#3B2340" stroke-width="5" stroke-linejoin="round"/>
+  <polyline points="-52,-22 52,-22" fill="none" stroke="#3B2340" stroke-width="5"/>
+  <ellipse cx="-20" cy="-32" rx="9" ry="5" fill="#fff" transform="rotate(-30 -20 -32)"/>
+</g></svg></div>
+<script>
+window.SCENE={w:900,h:600,fps:30,duration:8};
+const C=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),P=(t,a,d)=>C((t-a)/d);
+const back=x=>{x=C(x);const c=2.4;return 1+(c+1)*(x-1)**3+c*(x-1)**2};
+const eOut=x=>1-(1-C(x))**3;
+const stars=[...Array(7)].map((_,i)=>{const d=document.createElement('div');d.className='a';d.innerHTML=`<div style="font-size:${30+(i%3)*14}px;color:${['#FFD84D','#FF6FA8','#5FD3B3','#B9A7FF'][i%4]};-webkit-text-stroke:3px #3B2340;transform:translate(-50%,-50%)">✦</div>`;document.body.appendChild(d);return d});
+const SP=[[90,180],[820,120],[860,330],[60,470],[800,500],[470,90],[250,560]];
+window.seek=t=>{
+  // plate drops in with squash & stretch
+  const pl=document.getElementById('plate');
+  const k=P(t,0,.5), y=(1-eOut(k))*-420;
+  let sx=1,sy=1; if(t>.45){const h=t-.45;const j=Math.exp(-h*7)*Math.cos(h*24);sy=1-.18*j;sx=1+.14*j}
+  const fl=t>1.4?Math.sin((t-1.4)*2.4)*6:0;
+  pl.style.transform=`translateY(${y+fl}px) scale(${sx},${sy}) rotate(${-3+(t>1.4?Math.sin((t-1.4)*1.7)*1.2:0)}deg)`;pl.style.opacity=t>0?1:0;
+  // shine sweep
+  document.getElementById('shine').style.left=(-120+((t*.7)%1.6)/1.6*900)+'px';
+  // AI badge pops
+  const ai=document.getElementById('ai');ai.style.transform=`translateY(${fl}px) scale(${back(P(t,.55,.35))}) rotate(${12+Math.sin(t*3)*4}deg)`;
+  // ribbon unrolls from the center
+  const r=document.getElementById('rib'), rk=eOut(P(t,.75,.45));r.style.clipPath=`inset(0 ${50-50*rk}% 0 ${50-50*rk}%)`;
+  r.style.transform=`translateY(${fl*.6}px) rotate(${2+(t>1.4?Math.sin((t-1.4)*1.7+1)*1:0)}deg)`;
+  // gem pops and bobs
+  const g=document.getElementById('gem');const gk=back(P(t,1.0,.4));
+  g.style.transform=`translateY(${Math.sin(t*3.2)*10}px) scale(${gk}) rotate(${-14+Math.sin(t*2)*8}deg)`;
+  // stars twinkle around
+  stars.forEach((s,i)=>{const t0=1.05+i*.08,k2=P(t,t0,.35);s.style.left=SP[i][0]+'px';s.style.top=SP[i][1]+'px';
+    const tw=.75+.25*Math.sin(t*6+i*1.7);s.firstElementChild.style.transform=`translate(-50%,-50%) scale(${back(k2)*tw}) rotate(${t*90*(i%2?1:-1)}deg)`;s.style.opacity=t>t0?1:0});
+};
+seek(0);
+</script></body></html>

@@ -1,0 +1,8 @@
+final/
+clips/
+asr_model*/
+*.mp4
+*.wav
+*.mkv
+__pycache__/
+tools/pack/cfg.js

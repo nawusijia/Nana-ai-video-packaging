@@ -1,0 +1,88 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:transparent;font-family:"Noto Sans CJK SC",sans-serif}
+.a{position:absolute}
+.pill{position:absolute;left:50%;bottom:56px;padding:18px 52px 24px;background:#FFF4EA;border:5px solid #3B2340;border-radius:999px;
+  box-shadow:9px 10px 0 #3B2340;font-size:70px;font-weight:900;color:#3B2340;white-space:nowrap;letter-spacing:.02em}
+.pill i{font-style:normal}
+.stk{position:absolute;padding:16px 34px 20px;border:6px solid #3B2340;border-radius:34px;box-shadow:9px 10px 0 #3B2340;
+  font-weight:900;white-space:nowrap;color:#3B2340}
+.bub{position:absolute;width:170px;height:156px;border-radius:50%;background:#fff;border:6px solid #3B2340;box-shadow:6px 7px 0 #3B2340;
+  display:flex;align-items:center;justify-content:center;font-size:110px;font-weight:900;color:#FF6FA8}
+svg{overflow:visible}
+</style></head><body>
+<div class="pill" id="pill"></div>
+<script>
+window.SCENE={w:1920,h:1080,fps:30,duration:12};
+const INK='#3B2340',PINK='#FF6FA8',YEL='#FFD84D',MINT='#5FD3B3',LIL='#B9A7FF',CREAM='#FFF4EA';
+const C=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),P=(t,a,d)=>C((t-a)/d);
+const back=x=>{x=C(x);const c=2.2;return 1+(c+1)*(x-1)**3+c*(x-1)**2};
+const eIn=x=>C(x)**3, eOut=x=>1-(1-C(x))**3;
+const wob=(t,t0,a)=>t<t0?0:Math.sin((t-t0)*20)*a*Math.exp(-(t-t0)*5);
+function add(html,css){const d=document.createElement('div');d.className='a';d.innerHTML=html;Object.assign(d.style,css||{});document.body.appendChild(d);return d}
+
+/* subtitles: [start,end,text, highlight-words] */
+const subs=[[0.24,4.34,"先说好，这条视频从我的口播到所有包装",["口播","包装"]],
+            [4.67,6.46,"全程由 Claude 生成",["Claude"]],
+            [8.04,8.88,"你问我干了啥？",[]],
+            [10.74,12.05,"我负责吐槽",["吐槽"]]];
+const pill=document.getElementById('pill');
+
+/* stickers */
+const s1=add(`<div class="stk" style="background:${PINK};color:#fff;font-size:88px;transform:translate(-50%,-50%)"><span style="font-size:62px;color:${YEL}">全程 </span>Claude 出品</div>`,{left:'400px',top:'200px'});
+const s1b=add(`<div class="stk" style="background:${YEL};font-size:48px;padding:10px 26px 14px;border-radius:999px;transform:translate(-50%,-50%)">口播也是AI做的哦</div>`,{left:'400px',top:'350px'});
+const s2=add(`<div class="stk" style="background:${MINT};font-size:100px;transform:translate(-50%,-50%)">吐槽担当</div>`,{left:'360px',top:'520px'});
+const s2b=add(`<div class="stk" style="background:${CREAM};font-size:44px;padding:10px 24px 14px;border-radius:999px;transform:translate(-50%,-50%)">本期唯一人类工作量</div>`,{left:'360px',top:'670px'});
+const bub=add(`<div class="bub" style="transform:translate(-50%,-50%)">?</div>`,{left:'420px',top:'560px'});
+/* mascot peeking from bottom-right */
+const M=add(`<div id="mw" style="transform-origin:50% 100%"><svg width="1" height="1"><g transform="translate(0,-70) scale(.9)">
+  <path d="M0 -78 L0 -110" stroke="${INK}" stroke-width="6"/><path d="M0 -132 l8 14 15 2 -11 10 3 15 -15 -7 -15 7 3 -15 -11 -10 15 -2z" fill="${YEL}" stroke="${INK}" stroke-width="5" stroke-linejoin="round"/>
+  <ellipse cx="0" cy="0" rx="82" ry="76" fill="${PINK}" stroke="${INK}" stroke-width="7"/>
+  <ellipse cx="-30" cy="-36" rx="20" ry="12" fill="#fff" opacity=".7"/>
+  <g id="eyes"><ellipse cx="-26" cy="-4" rx="11" ry="15" fill="${INK}"/><ellipse cx="26" cy="-4" rx="11" ry="15" fill="${INK}"/>
+  <circle cx="-22" cy="-9" r="4" fill="#fff"/><circle cx="30" cy="-9" r="4" fill="#fff"/></g>
+  <ellipse cx="-52" cy="20" rx="14" ry="8" fill="#ff3d86" opacity=".55"/><ellipse cx="52" cy="20" rx="14" ry="8" fill="#ff3d86" opacity=".55"/>
+  <path id="mouth" d="M-12 22 Q0 34 12 22" fill="none" stroke="${INK}" stroke-width="6" stroke-linecap="round"/>
+</g></svg></div>`,{left:'130px',top:'1080px'});
+const mw=M.querySelector('#mw'),eyes=M.querySelector('#eyes');
+/* sparkles */
+const sp=[0,1,2,3].map(i=>add(`<div style="font-size:${40+i%2*16}px;color:${[YEL,PINK,LIL,MINT][i]};transform:translate(-50%,-50%)">✦</div>`,{}));
+
+function show(el,t,t0,t1,rot){
+  const vis=t>=t0&&t<t1+.25;el.style.display=vis?'block':'none';if(!vis)return;
+  const k=back(P(t,t0,.4))*(1-eIn(P(t,t1,.25)));
+  el.firstElementChild.style.transform=`translate(-50%,-50%) scale(${k}) rotate(${rot+wob(t,t0,7)}deg)`;
+}
+window.seek=t=>{
+  /* subtitle pill with karaoke */
+  const s=subs.find(s=>t>=s[0]-.1&&t<=s[1]+.25);
+  if(s){
+    const txt=s[2], n=txt.length, prog=C((t-s[0])/(s[1]-s[0]));
+    const k=back(P(t,s[0]-.1,.3))*(1-eIn(P(t,s[1]+.05,.2)));
+    let html='',lit=Math.floor(prog*n+0.5);
+    // mark highlight ranges
+    const hl=new Array(n).fill(false); s[3].forEach(w=>{const i=txt.indexOf(w);if(i>=0)for(let j=i;j<i+w.length;j++)hl[j]=true});
+    for(let i=0;i<n;i++){const c=txt[i];const col=i<lit?PINK:INK;
+      html+= hl[i]?`<i style="color:${col};background:linear-gradient(transparent 58%,${YEL} 58%)">${c}</i>`:`<i style="color:${col}">${c}</i>`}
+    pill.innerHTML=html;pill.style.display='block';pill.style.transform=`translateX(-50%) scale(${k})`;
+  } else pill.style.display='none';
+
+  show(s1,t,4.72,8.0,-6); show(s1b,t,5.05,8.0,4);
+  show(bub,t,8.1,10.6,0);
+  show(s2,t,10.8,12.2,7); show(s2b,t,11.1,12.2,-3);
+
+  /* mascot: peeks up at 4.7, wave-bob; at 8.0 tilts head (question); at 10.8 hops */
+  let up=eOut(P(t,4.6,.45))*170, rot=0, sy=1;
+  if(t>8.0&&t<10.7) rot=-12*eOut(P(t,8.0,.3));
+  if(t>=10.8){const h=t-10.8;up+=Math.abs(Math.sin(h*Math.PI*2.2))*60*Math.exp(-h*1.2);sy=1+.1*Math.sin(h*14)*Math.exp(-h*3)}
+  M.style.top=(1080+230-up-(up>0?200*C(up/170):0))+'px';
+  mw.style.transform=`rotate(${rot+(t>4.6&&t<8?Math.sin(t*5)*4:0)}deg) scale(${1/sy},${sy})`;
+  eyes.setAttribute('transform',(t%2.3)<.1?'translate(0,-4) scale(1,.15) translate(0,20)':'');
+  /* sparkles around 吐槽担当 */
+  sp.forEach((e,i)=>{const t0=10.95+i*.07, k=P(t,t0,.5);const a=i*1.7+.4;
+    e.style.left=(360+Math.cos(a)*(210+90*eOut(k)))+'px';e.style.top=(520+Math.sin(a)*(80+60*eOut(k)))+'px';
+    e.style.opacity=t>t0?1-P(t,t0+.6,.4):0;e.firstElementChild.style.transform=`translate(-50%,-50%) scale(${back(k)}) rotate(${t*200}deg)`});
+};
+seek(0);
+</script></body></html>
